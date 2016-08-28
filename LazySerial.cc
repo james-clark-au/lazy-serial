@@ -20,8 +20,11 @@
 #include "LazySerial.h"
 
 //constructor
-LazySerial::LazySerial()
+LazySerial::LazySerial(
+		Stream &stream) :
+	d_stream(stream)
 {
+	clear_buffer();
 }
 
 

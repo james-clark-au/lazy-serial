@@ -20,6 +20,8 @@
 #ifndef LAZYSERIAL_H
 #define LAZYSERIAL_H
 
+#define BUF_SIZE 256	// Max size of any command string.
+
 #include <Arduino.h>
 
 
@@ -30,7 +32,6 @@ typedef void (*CallbackFunction)(/*####Stream? Partial Buffer?*/);
 
 /**
  * The struct we store our callbacks in.
- * #### Unless we have a Map container available somehow?
  */
 struct Callback
 {
@@ -43,8 +44,13 @@ struct Callback
 class LazySerial
 {
 public:
+	/**
+	 * Constructor. Pass in the Stream to read and write from/to.
+	 * For example, the magic 'Serial' global variable should be usable as a Stream-class object.
+	 */
 	explicit
-	LazySerial();
+	LazySerial(
+		Stream &stream);
 	
 	/**
 	 * Call this from your own loop() for LazySerial to poll the Serial device for more data.
@@ -60,6 +66,31 @@ public:
 	register_callback(
 		const char* name,
 		CallbackFunction *callback);
+		
+private:
+	/**
+	 * What stream we are reading from / writing to.
+	 */
+	Stream &d_stream;	
+
+	/**
+	 * Command Buffer, and our current position within it.
+	 */
+	char d_buf[BUF_SIZE];
+	int  d_pos;
+	
+	/**
+	 * Where we store all the callbacks we have registered.
+	 * Lack of dynamic storage is killing me.
+	 */
+	
+	
+	void
+	clear_buffer()
+	{
+		d_pos = 0;
+		d_buf[d_pos] = '\0';
+	}
 };
 
 
