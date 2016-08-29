@@ -34,6 +34,13 @@ namespace LazySerial
 	void
 	LazySerial::loop()
 	{
+		bool ready = assemble_command();
+		if ( ! ready) {
+			return;
+		}
+		
+		// Dispatch command!
+		// ####
 	}
 	
 	
