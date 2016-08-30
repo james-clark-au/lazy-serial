@@ -19,6 +19,8 @@
 
 #include "LazySerial.h"
 
+#include <string.h>	// C-style string functions strchr, strtok, etc.
+
 namespace LazySerial
 {
 	//constructor
@@ -34,13 +36,30 @@ namespace LazySerial
 	void
 	LazySerial::loop()
 	{
+		// Slowly assemble the command buffer byte by byte.
 		bool ready = assemble_command();
 		if ( ! ready) {
 			return;
 		}
 		
+		// Identify the command word. strchr is in <string.h>
+		char *end_of_cmd = strchr(d_buf, ' ');
+		char *cmd_name = d_buf;
+		char *cmd_args = d_buf;
+		if (end_of_cmd) {
+			// Set the delimiting space to a \0, advance args ptr to one past it.
+			end_of_cmd[0] = '\0';	// cmd_name will now be valid
+			end_of_cmd++;
+			cmd_args = end_of_cmd;
+		} else {
+			// No args. Put the 'args' pointer at the trailing \0 of the command itself, making args the empty string.
+			cmd_args = d_buf + strlen(d_buf);
+		}
+		
 		// Dispatch command!
-		// ####
+		dispatch_command(cmd_name, cmd_args);
+		// Clean up our buffer afterwards.
+		clear_buffer();
 	}
 	
 	
@@ -92,6 +111,22 @@ namespace LazySerial
 			d_buf[d_pos] = '\0';	// Just me being paranoid.
 		}
 		return false;
+	}
+	
+	
+	void
+	LazySerial::dispatch_command(
+			const char *cmd_name,
+			const char *cmd_args )
+	{
+		for (int i = 0; i < d_num_commands; ++i) {
+			if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
+				d_commands[i].callback(cmd_args);
+				return;
+			}
+		}
+		// Nothing matched. Print some help?
+		cmd_help();
 	}
 	
 } //namespace
