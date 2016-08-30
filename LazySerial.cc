@@ -68,6 +68,9 @@ namespace LazySerial
 		const char* name,
 		CallbackFunction *callback)
 	{
+		if (d_num_commands >= NUM_CMDS) {
+			return;		// Nope!
+		}
 		d_commands[d_num_commands].name = name;
 		d_commands[d_num_commands].callback = callback;
 		d_num_commands++;
