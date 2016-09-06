@@ -66,7 +66,7 @@ namespace LazySerial
 	void
 	LazySerial::register_callback(
 		const char* name,
-		CallbackFunction *callback)
+		CallbackFunction callback)
 	{
 		if (d_num_commands >= NUM_CMDS) {
 			return;		// Nope!

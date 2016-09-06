@@ -39,7 +39,7 @@ namespace LazySerial
 	struct Callback
 	{
 		const char *name;
-		CallbackFunction *callback;
+		CallbackFunction callback;
 	};
 
 
