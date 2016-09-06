@@ -1,0 +1,14 @@
+# Syntax highlighting for Arduino IDE
+# Class
+
+LazySerial	KEYWORD1
+
+# Methods and Functions 
+
+loop	KEYWORD2
+register_callback	KEYWORD2
+
+# Constants
+ 
+I_DUNNO			LITERAL1
+
