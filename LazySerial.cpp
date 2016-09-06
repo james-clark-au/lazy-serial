@@ -97,7 +97,10 @@ namespace LazySerial
 			char ch = d_stream.read();
 			
 			// If it's the \n terminator, don't advance pos but instead write \0 and return success.
-			if (ch == '\n') {
+			// Arduino seems to (correctly) interpret \n as 10, LF. Which is 'Newline' in the Serial Monitor.
+			// Minicom is being weird. Let's just support both CR and LF (and in the event we get both,
+			// interpret that as a regular command plus a no-op)
+			if (ch == 10 || ch == 13) {
 				d_buf[d_pos] = '\0';
 				return true;
 			}
@@ -122,6 +125,11 @@ namespace LazySerial
 			const char *cmd_name,
 			const char *cmd_args )
 	{
+		// No-op command, helps in the case we are getting CRLF.
+		if (cmd_name[0] == '\0') {
+			return;
+		}
+		// Scan through all registered callbacks.
 		for (int i = 0; i < d_num_commands; ++i) {
 			if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
 				d_commands[i].callback(cmd_args);
