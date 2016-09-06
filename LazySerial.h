@@ -67,7 +67,7 @@ namespace LazySerial
 		void
 		register_callback(
 			const char* name,
-			CallbackFunction *callback);
+			CallbackFunction callback);
 			
 	private:
 		/**
