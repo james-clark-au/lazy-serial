@@ -30,8 +30,10 @@ namespace LazySerial
 {
 	/**
 	 * The function pointer signature used for callbacks.
+	 * It is necessary to pass the 'args' string as a non-const char *, since you will most likely want to
+	 * use strtok() on it to further parse things.
 	 */
-	typedef void (*CallbackFunction)(const char *);
+	typedef void (*CallbackFunction)(char *);
 
 	/**
 	 * The struct we store our callbacks in.
@@ -118,7 +120,7 @@ namespace LazySerial
 		void
 		dispatch_command(
 			const char *cmd_name,
-			const char *cmd_args );
+			char *cmd_args );
 	};
 
 } //namespace

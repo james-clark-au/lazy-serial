@@ -123,7 +123,7 @@ namespace LazySerial
 	void
 	LazySerial::dispatch_command(
 			const char *cmd_name,
-			const char *cmd_args )
+			char *cmd_args )
 	{
 		// No-op command, helps in the case we are getting CRLF.
 		if (cmd_name[0] == '\0') {
