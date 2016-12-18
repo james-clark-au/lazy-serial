@@ -21,7 +21,7 @@
 #define LAZYSERIAL_H
 
 #define BUF_SIZE 128	// Max size of any command string. Including the \0!
-#define NUM_CMDS 8   // Max number of commands we will ever have.
+#define NUM_CMDS 10  // Max number of commands we will ever have.
 
 #include <Arduino.h>
 
