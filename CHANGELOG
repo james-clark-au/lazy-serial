@@ -1,6 +1,7 @@
 # 1.1 (Apr 2020)
 
 - Callbacks bumped to 20 (this needs to be made more dynamic...), buffer size bumped to 512 (c'mon, microcontrollers have heaps of space these days)
+- Default help command can be changed.
 
 # 1.0 (2016)
 

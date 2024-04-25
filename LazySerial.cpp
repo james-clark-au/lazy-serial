@@ -26,7 +26,8 @@ namespace LazySerial
 	//constructor
 	LazySerial::LazySerial(
 			Stream &stream) :
-		d_stream(stream)
+		d_stream(stream),
+		d_help(NULL)
 	{
 		clear_buffer();
 		d_num_commands = 0;
@@ -77,6 +78,7 @@ namespace LazySerial
 	}
 
 
+  // built-in help function, can be changed.
 	void
 	LazySerial::cmd_help()
 	{
@@ -86,6 +88,13 @@ namespace LazySerial
 			d_stream.print(d_commands[i].name);
 		}
 		d_stream.print(F(".\n"));
+	}
+
+	void
+	LazySerial::set_help_callback(
+		CallbackFunction cmd_help)
+	{
+		d_help = cmd_help;
 	}
 
 
@@ -137,7 +146,11 @@ namespace LazySerial
 			}
 		}
 		// Nothing matched. Print some help?
-		cmd_help();
+		if (d_help) {
+		  d_help(cmd_args);
+		} else {
+			cmd_help();
+		}
 	}
 	
 } //namespace

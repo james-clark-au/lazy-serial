@@ -71,7 +71,22 @@ namespace LazySerial
 		register_callback(
 			const char* name,
 			CallbackFunction callback);
-			
+
+    /**
+		 * The default help function.
+		 * The magic HELP command is hard-coded to actually hit this method rather than anything in
+		 * the function table, because we want access to our list of commands.
+		 */
+		void
+		cmd_help();
+
+    /**
+		 * Set an alternative callback when no command matches.
+		 */
+    void
+    set_help_callback(
+			CallbackFunction cmd_help);
+
 	private:
 		/**
 		 * What stream we are reading from / writing to.
@@ -90,6 +105,12 @@ namespace LazySerial
 		 */
 		Callback d_commands[NUM_CMDS];
 		int      d_num_commands;
+
+		/**
+		 * Permit cmd_help to be overridden with something custom (and outside of this class).
+		 */
+		CallbackFunction d_help;
+
 		
 		void
 		clear_buffer()
@@ -97,13 +118,6 @@ namespace LazySerial
 			d_pos = 0;
 			d_buf[d_pos] = '\0';
 		}
-		
-		/**
-		 * The magic HELP command is hard-coded to actually hit this method rather than anything in
-		 * the function table, because we want access to our list of commands.
-		 */
-		void
-		cmd_help();
 		
 		/**
 		 * Read bytes from the serial until we get a \n.
