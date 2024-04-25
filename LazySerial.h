@@ -87,6 +87,15 @@ namespace LazySerial
     set_help_callback(
 			CallbackFunction cmd_help);
 
+		/**
+		 * Dispatch the command named by 'cmd_name', to whatever callback has been registered by the user.
+		 * If none match, cmd_help() will be invoked instead.
+		 */
+		void
+		dispatch_command(
+			const char *cmd_name,
+			char *cmd_args );
+
 	private:
 		/**
 		 * What stream we are reading from / writing to.
@@ -128,14 +137,6 @@ namespace LazySerial
 		bool
 		assemble_command();
 		
-		/**
-		 * Dispatch the command named by 'cmd_name', to whatever callback has been registered by the user.
-		 * If none match, cmd_help() will be invoked instead.
-		 */
-		void
-		dispatch_command(
-			const char *cmd_name,
-			char *cmd_args );
 	};
 
 } //namespace

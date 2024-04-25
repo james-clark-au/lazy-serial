@@ -98,6 +98,31 @@ namespace LazySerial
 	}
 
 
+	void
+	LazySerial::dispatch_command(
+			const char *cmd_name,
+			char *cmd_args )
+	{
+		// No-op command, helps in the case we are getting CRLF.
+		if (cmd_name[0] == '\0') {
+			return;
+		}
+		// Scan through all registered callbacks.
+		for (int i = 0; i < d_num_commands; ++i) {
+			if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
+				d_commands[i].callback(cmd_args);
+				return;
+			}
+		}
+		// Nothing matched. Print some help?
+		if (d_help) {
+		  d_help(cmd_args);
+		} else {
+			cmd_help();
+		}
+	}
+
+
 	bool
 	LazySerial::assemble_command()
 	{
@@ -127,31 +152,6 @@ namespace LazySerial
 		}
 		return false;
 	}
-	
-	
-	void
-	LazySerial::dispatch_command(
-			const char *cmd_name,
-			char *cmd_args )
-	{
-		// No-op command, helps in the case we are getting CRLF.
-		if (cmd_name[0] == '\0') {
-			return;
-		}
-		// Scan through all registered callbacks.
-		for (int i = 0; i < d_num_commands; ++i) {
-			if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
-				d_commands[i].callback(cmd_args);
-				return;
-			}
-		}
-		// Nothing matched. Print some help?
-		if (d_help) {
-		  d_help(cmd_args);
-		} else {
-			cmd_help();
-		}
-	}
-	
+		
 } //namespace
 

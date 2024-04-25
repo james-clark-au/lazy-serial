@@ -2,6 +2,7 @@
 
 - Callbacks bumped to 20 (this needs to be made more dynamic...), buffer size bumped to 512 (c'mon, microcontrollers have heaps of space these days)
 - Default help command can be changed.
+- dispatch_command() made public so alternate sources of commands can be used.
 
 # 1.0 (2016)
 
