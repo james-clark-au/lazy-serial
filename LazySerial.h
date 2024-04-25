@@ -86,6 +86,20 @@ namespace LazySerial
     void
     set_help_callback(
 			CallbackFunction cmd_help);
+		
+		/**
+		 * Once the buffer is full, identify what command it is, parse and run it.
+		 */
+		void
+		run_command();
+		
+		/**
+		 * Instead of LazySerial polling the supplied Stream for commands, you can also supply a large string of
+		 * \n-terminated commands to run in a batch.
+		 */
+		void
+		run_script(
+			const char *script);
 
 		/**
 		 * Dispatch the command named by 'cmd_name', to whatever callback has been registered by the user.

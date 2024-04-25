@@ -42,7 +42,13 @@ namespace LazySerial
 		if ( ! ready) {
 			return;
 		}
-		
+		run_command();
+	}
+
+
+  // Once the buffer has a command in it, parse out the command and its args and then run it.
+	void LazySerial::run_command()
+	{
 		// Identify the command word. strchr is in <string.h>
 		char *end_of_cmd = strchr(d_buf, ' ');
 		char *cmd_name = d_buf;
@@ -62,7 +68,7 @@ namespace LazySerial
 		// Clean up our buffer afterwards.
 		clear_buffer();
 	}
-	
+
 	
 	void
 	LazySerial::register_callback(
@@ -97,6 +103,36 @@ namespace LazySerial
 		d_help = cmd_help;
 	}
 
+
+  void
+	LazySerial::run_script(
+		const char *script)
+	{
+		const char *pos = script;
+    const char *end = script;
+		while (*pos) {
+      // starting from pos, search for a \n or \0.
+			end = pos;
+			while (*end && *end != '\n') {
+				end++;
+			}
+			// Copy the resulting line into the modifiable command buffer.
+      size_t length = end - pos;
+			if (length) {
+				length = MIN(length, BUF_SIZE-1);
+				strncpy(d_buf, pos, length);
+				d_buf[length] = '\0';
+
+				// Parse out the command and its arguments and run it!
+				run_command();
+			}
+			// Next line
+			if (*end) {
+        end++;
+			}
+      pos = end;
+		}
+	}
 
 	void
 	LazySerial::dispatch_command(
