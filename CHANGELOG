@@ -1,4 +1,8 @@
-# 1.1 (Apr 2020)
+# 1.2 (Apr 2024)
+
+- Alternative dispatch_command() that will take a `const char *` and copy it somewhere mutable for the sake of later tokenisation.
+
+# 1.1 (Apr 2024)
 
 - Callbacks bumped to 20 (this needs to be made more dynamic...), buffer size bumped to 512 (c'mon, microcontrollers have heaps of space these days)
 - Default help command can be changed.

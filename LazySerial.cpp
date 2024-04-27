@@ -159,6 +159,17 @@ namespace LazySerial
 	}
 
 
+	void
+	LazySerial::dispatch_command(
+			const char *cmd_name,
+			const char *cmd_args )
+	{
+		// Put args somewhere mutable.
+		strncpy(d_args_tmp, cmd_args, BUF_SIZE-1);
+		d_args_tmp[BUF_SIZE-1] = '\0';
+		dispatch_command(cmd_name, d_args_tmp);
+	}
+
 	bool
 	LazySerial::assemble_command()
 	{

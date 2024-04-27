@@ -20,7 +20,7 @@
 #ifndef LAZYSERIAL_H
 #define LAZYSERIAL_H
 
-#define LAZYSERIAL_VERSION 1.1
+#define LAZYSERIAL_VERSION 1.2
 #define BUF_SIZE 512	// Max size of any command string. Including the \0!
 #define NUM_CMDS 20   // Max number of commands we will ever have.
 
@@ -110,6 +110,14 @@ namespace LazySerial
 			const char *cmd_name,
 			char *cmd_args );
 
+		/**
+		 * As dispatch_command() but in the event we only have a const char * for the arguments.
+		 */
+		void
+		dispatch_command(
+			const char *cmd_name,
+			const char *cmd_args );
+
 	private:
 		/**
 		 * What stream we are reading from / writing to.
@@ -121,6 +129,12 @@ namespace LazySerial
 		 */
 		char d_buf[BUF_SIZE];
 		int  d_pos;
+		
+		/**
+		 * Args Buffer, needed just in case client code is using dispatch() with a const char *...
+		 * Could be done better but I guess I don't really want to clobber the serial buffer?
+		 */
+		char d_args_tmp[BUF_SIZE];
 		
 		/**
 		 * Where we store all the callbacks we have registered.
