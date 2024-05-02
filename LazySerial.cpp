@@ -21,6 +21,11 @@
 
 #include <string.h>	// C-style string functions strchr, strtok, etc.
 
+#ifndef MIN
+  #define MIN(a, b) (a) < (b) ? (a) : (b)
+#endif
+
+
 namespace LazySerial
 {
 	//constructor
@@ -75,7 +80,7 @@ namespace LazySerial
 		const char* name,
 		CallbackFunction callback)
 	{
-		if (d_num_commands >= NUM_CMDS) {
+		if (d_num_commands >= LAZYSERIAL_NUM_CMDS) {
 			return;		// Nope!
 		}
 		d_commands[d_num_commands].name = name;
@@ -119,7 +124,7 @@ namespace LazySerial
 			// Copy the resulting line into the modifiable command buffer.
       size_t length = end - pos;
 			if (length) {
-				length = MIN(length, BUF_SIZE-1);
+				length = MIN(length, LAZYSERIAL_BUF_SIZE-1);
 				strncpy(d_buf, pos, length);
 				d_buf[length] = '\0';
 
@@ -165,8 +170,8 @@ namespace LazySerial
 			const char *cmd_args )
 	{
 		// Put args somewhere mutable.
-		strncpy(d_args_tmp, cmd_args, BUF_SIZE-1);
-		d_args_tmp[BUF_SIZE-1] = '\0';
+		strncpy(d_args_tmp, cmd_args, LAZYSERIAL_BUF_SIZE-1);
+		d_args_tmp[LAZYSERIAL_BUF_SIZE-1] = '\0';
 		dispatch_command(cmd_name, d_args_tmp);
 	}
 
@@ -190,7 +195,7 @@ namespace LazySerial
 			// keeping a \0 terminator just in case.
 			d_buf[d_pos] = ch;
 			d_pos++;
-			if (d_pos >= BUF_SIZE) {
+			if (d_pos >= LAZYSERIAL_BUF_SIZE) {
 				// But if we're going to overflow, forget the whole damn thing.
 				clear_buffer();
 				return false;

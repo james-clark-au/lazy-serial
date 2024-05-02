@@ -21,8 +21,13 @@
 #define LAZYSERIAL_H
 
 #define LAZYSERIAL_VERSION 1.2
-#define BUF_SIZE 512	// Max size of any command string. Including the \0!
-#define NUM_CMDS 20   // Max number of commands we will ever have.
+
+// Max size of any command string. Including the \0!
+// We currently kludge things a bit and allocate two buffers.
+#define LAZYSERIAL_BUF_SIZE 256
+// Max number of commands we will ever have.
+#define LAZYSERIAL_NUM_CMDS 20
+
 
 #include <Arduino.h>
 
@@ -127,20 +132,20 @@ namespace LazySerial
 		/**
 		 * Command Buffer, and our current position within it.
 		 */
-		char d_buf[BUF_SIZE];
+		char d_buf[LAZYSERIAL_BUF_SIZE];
 		int  d_pos;
 		
 		/**
 		 * Args Buffer, needed just in case client code is using dispatch() with a const char *...
 		 * Could be done better but I guess I don't really want to clobber the serial buffer?
 		 */
-		char d_args_tmp[BUF_SIZE];
+		char d_args_tmp[LAZYSERIAL_BUF_SIZE];
 		
 		/**
 		 * Where we store all the callbacks we have registered.
 		 * Lack of dynamic storage is killing me.
 		 */
-		Callback d_commands[NUM_CMDS];
+		Callback d_commands[LAZYSERIAL_NUM_CMDS];
 		int      d_num_commands;
 
 		/**
@@ -159,8 +164,8 @@ namespace LazySerial
 		/**
 		 * Read bytes from the serial until we get a \n.
 		 * Returns true if we get one and have a completed command (with \0) in the buffer,
-		 * false if we have yet to get a full command (or hit BUF_SIZE - no incomplete command
-		 * will be processed)
+		 * false if we have yet to get a full command (or hit LAZYSERIAL_BUF_SIZE - no incomplete
+		 * command will be processed)
 		 */
 		bool
 		assemble_command();
