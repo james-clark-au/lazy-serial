@@ -20,13 +20,17 @@
 #ifndef LAZYSERIAL_H
 #define LAZYSERIAL_H
 
-#define LAZYSERIAL_VERSION 1.2
+#define LAZYSERIAL_VERSION 1.3
 
 // Max size of any command string. Including the \0!
 // We currently kludge things a bit and allocate two buffers.
-#define LAZYSERIAL_BUF_SIZE 256
+#ifndef LAZYSERIAL_BUF_SIZE
+  #define LAZYSERIAL_BUF_SIZE 256
+#endif
 // Max number of commands we will ever have.
-#define LAZYSERIAL_NUM_CMDS 20
+#ifndef LAZYSERIAL_NUM_CMDS
+  #define LAZYSERIAL_NUM_CMDS 25
+#endif
 
 
 #include <Arduino.h>

@@ -93,7 +93,11 @@ namespace LazySerial
 	void
 	LazySerial::cmd_help()
 	{
-		d_stream.print(F("ERR Available commands:"));
+		d_stream.print(F("ERR "));
+		d_stream.print(d_num_commands);
+		d_stream.print("/");
+		d_stream.print(LAZYSERIAL_NUM_CMDS);
+		d_stream.print(F(" Available commands:"));
 		for (int i = 0; i < d_num_commands; ++i) {
 			d_stream.print(' ');
 			d_stream.print(d_commands[i].name);
