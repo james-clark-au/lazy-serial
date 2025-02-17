@@ -46,6 +46,11 @@ namespace LazySerial
 	typedef void (*CallbackFunction)(char *);
 
 	/**
+	 * Function pointer signature for a generic character-reading source, for use with scripts saved to EEPROM.
+	 */
+	typedef char (*ReaderFunction)(size_t);
+	
+	/**
 	 * The struct we store our callbacks in.
 	 */
 	struct Callback
@@ -109,6 +114,14 @@ namespace LazySerial
 		void
 		run_script(
 			const char *script);
+		
+		/**
+		 * Or a generic function to be called with an incrementing index until a '\0' is returned.
+		 * This lets me read from EEPROM without depending on EEPROM.h here.
+		 */
+		void
+		run_script(
+			ReaderFunction read_char_fn);
 
 		/**
 		 * Dispatch the command named by 'cmd_name', to whatever callback has been registered by the user.

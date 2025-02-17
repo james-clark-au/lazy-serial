@@ -143,6 +143,36 @@ namespace LazySerial
 		}
 	}
 
+
+  void
+	LazySerial::run_script(
+		ReaderFunction read_char_fn)
+	{
+		size_t pos = 0;
+		size_t this_cmd_pos = 0;
+		char ch = read_char_fn(pos);
+		while (ch) {
+			if (ch == '\n') {
+				// Reached newline, run this command rather than append '\n'.
+				d_buf[this_cmd_pos] = '\0';
+				run_command();
+				// Reset.
+				this_cmd_pos = 0;
+			} else {
+			  // Copy into command buffer as we go.
+			  d_buf[this_cmd_pos++] = ch;
+			}
+		  // Read next ch
+			ch = read_char_fn(++pos);
+		}
+		// Reached \0, is there any leftover?
+		if (this_cmd_pos) {
+			d_buf[this_cmd_pos] = '\0';
+			run_command();
+		}
+	}
+	
+
 	void
 	LazySerial::dispatch_command(
 			const char *cmd_name,
