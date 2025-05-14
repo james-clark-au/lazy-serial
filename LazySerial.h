@@ -71,22 +71,39 @@ namespace LazySerial
      */
     explicit
     LazySerial(
-      Stream &stream);
+        Stream &stream) :
+      d_stream(stream),
+      d_help(NULL) {
+      clear_buffer();
+      d_num_commands = 0;
+    }
     
     /**
      * Call this from your own loop() for LazySerial to poll the Serial device for more data.
      * Shouldn't delay for too long unless one of your callbacks ends up triggering and taking time to process.
      */
     void
-    loop();
-    
+    loop() {
+      // Slowly assemble the command buffer byte by byte.
+      bool ready = assemble_command();
+      LAZY_RETURN_UNLESS(ready);
+      run_command();
+    }
+
     /**
      * Register a callback for use when a given command is seen.
      */
     void
     register_callback(
-      const char* name,
-      CallbackFunction callback);
+        const char* name,
+        CallbackFunction callback) {
+      if (d_num_commands >= LAZYSERIAL_NUM_CMDS) {
+        return;    // Nope!
+      }
+      d_commands[d_num_commands].name = name;
+      d_commands[d_num_commands].callback = callback;
+      d_num_commands++;
+    }
 
     /**
      * The default help function.
@@ -94,20 +111,51 @@ namespace LazySerial
      * the function table, because we want access to our list of commands.
      */
     void
-    cmd_help();
-
+    cmd_help() {
+      d_stream.print(F("ERR "));
+      d_stream.print(d_num_commands);
+      d_stream.print("/");
+      d_stream.print(LAZYSERIAL_NUM_CMDS);
+      d_stream.print(F(" Available commands:"));
+      for (int i = 0; i < d_num_commands; ++i) {
+        d_stream.print(' ');
+        d_stream.print(d_commands[i].name);
+      }
+      d_stream.print(F(".\n"));
+    }
     /**
      * Set an alternative callback when no command matches.
      */
     void
     set_help_callback(
-      CallbackFunction cmd_help);
+        CallbackFunction cmd_help) {
+      d_help = cmd_help;
+    }
     
     /**
      * Once the buffer is full, identify what command it is, parse and run it.
      */
     void
-    run_command();
+    run_command() {
+      // Identify the command word. strchr is in <string.h>
+      char *end_of_cmd = strchr(d_buf, ' ');
+      char *cmd_name = d_buf;
+      char *cmd_args = d_buf;
+      if (end_of_cmd) {
+        // Set the delimiting space to a \0, advance args ptr to one past it.
+        end_of_cmd[0] = '\0';  // cmd_name will now be valid
+        end_of_cmd++;
+        cmd_args = end_of_cmd;
+      } else {
+        // No args. Put the 'args' pointer at the trailing \0 of the command itself, making args the empty string.
+        cmd_args = d_buf + strlen(d_buf);
+      }
+      
+      // Dispatch command!
+      dispatch_command(cmd_name, cmd_args);
+      // Clean up our buffer afterwards.
+      clear_buffer();
+    }
     
     /**
      * Instead of LazySerial polling the supplied Stream for commands, you can also supply a large string of
@@ -115,7 +163,32 @@ namespace LazySerial
      */
     void
     run_script(
-      const char *script);
+        const char *script) {
+      const char *pos = script;
+      const char *end = script;
+      while (*pos) {
+        // starting from pos, search for a \n or \0.
+        end = pos;
+        while (*end && *end != '\n') {
+          end++;
+        }
+        // Copy the resulting line into the modifiable command buffer.
+        size_t length = end - pos;
+        if (length) {
+          length = MIN(length, LAZYSERIAL_BUF_SIZE-1);
+          strncpy(d_buf, pos, length);
+          d_buf[length] = '\0';
+
+          // Parse out the command and its arguments and run it!
+          run_command();
+        }
+        // Next line
+        if (*end) {
+          end++;
+        }
+        pos = end;
+      }
+    }
     
     /**
      * Or a generic function to be called with an incrementing index until a '\0' is returned.
@@ -123,7 +196,30 @@ namespace LazySerial
      */
     void
     run_script(
-      ReaderFunction read_char_fn);
+        ReaderFunction read_char_fn) {
+      size_t pos = 0;
+      size_t this_cmd_pos = 0;
+      char ch = read_char_fn(pos);
+      while (ch) {
+        if (ch == '\n') {
+          // Reached newline, run this command rather than append '\n'.
+          d_buf[this_cmd_pos] = '\0';
+          run_command();
+          // Reset.
+          this_cmd_pos = 0;
+        } else {
+          // Copy into command buffer as we go.
+          d_buf[this_cmd_pos++] = ch;
+        }
+        // Read next ch
+        ch = read_char_fn(++pos);
+      }
+      // Reached \0, is there any leftover?
+      if (this_cmd_pos) {
+        d_buf[this_cmd_pos] = '\0';
+        run_command();
+      }
+    }
 
     /**
      * Dispatch the command named by 'cmd_name', to whatever callback has been registered by the user.
@@ -131,29 +227,41 @@ namespace LazySerial
      */
     void
     dispatch_command(
-      const char *cmd_name,
-      char *cmd_args );
+        const char *cmd_name,
+        char *cmd_args ) {
+      // No-op command, helps in the case we are getting CRLF.
+      if (cmd_name[0] == '\0') {
+        return;
+      }
+      // Scan through all registered callbacks.
+      for (int i = 0; i < d_num_commands; ++i) {
+        if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
+          d_commands[i].callback(cmd_args);
+          return;
+        }
+      }
+      // Nothing matched. Print some help?
+      if (d_help) {
+        d_help(cmd_args);
+      } else {
+        cmd_help();
+      }
+    }
 
     /**
      * As dispatch_command() but in the event we only have a const char * for the arguments.
      */
     void
     dispatch_command(
-      const char *cmd_name,
-      const char *cmd_args );
-
-  private:
-    /**
-     * What stream we are reading from / writing to.
-     */
-    Stream &d_stream;  
+        const char *cmd_name,
+        const char *cmd_args ) {
+      // Put args somewhere mutable.
+      strncpy(d_args_tmp, cmd_args, LAZYSERIAL_BUF_SIZE-1);
+      d_args_tmp[LAZYSERIAL_BUF_SIZE-1] = '\0';
+      dispatch_command(cmd_name, d_args_tmp);
+    }
   
-    /**
-     * Command Buffer, and our current position within it.
-     */
-    char d_buf[LAZYSERIAL_BUF_SIZE];
-    int  d_pos;
-    
+  private:
     /**
      * Args Buffer, needed just in case client code is using dispatch() with a const char *...
      * Could be done better but I guess I don't really want to clobber the serial buffer?
@@ -174,8 +282,7 @@ namespace LazySerial
 
     
     void
-    clear_buffer()
-    {
+    clear_buffer() {
       d_pos = 0;
       d_buf[d_pos] = '\0';
     }
@@ -187,9 +294,44 @@ namespace LazySerial
      * command will be processed)
      */
     bool
-    assemble_command();
+    assemble_command() {
+      while (d_stream.available()) {
+        // Read new character
+        char ch = d_stream.read();
+        
+        // If it's the \n terminator, don't advance pos but instead write \0 and return success.
+        // Arduino seems to (correctly) interpret \n as 10, LF. Which is 'Newline' in the Serial Monitor.
+        // Minicom is being weird. Let's just support both CR and LF (and in the event we get both,
+        // interpret that as a regular command plus a no-op)
+        if (ch == 10 || ch == 13) {
+          d_buf[d_pos] = '\0';
+          return true;
+        }
+        
+        // For the mundane case, add the character to the buf and advance pos,
+        // keeping a \0 terminator just in case.
+        d_buf[d_pos] = ch;
+        d_pos++;
+        if (d_pos >= LAZYSERIAL_BUF_SIZE) {
+          // But if we're going to overflow, forget the whole damn thing.
+          clear_buffer();
+          return false;
+        }
+        d_buf[d_pos] = '\0';  // Just me being paranoid.
+      }
+      return false;
+    }
     
-  };
-
+    /**
+     * What stream we are reading from / writing to.
+     */
+    Stream &d_stream;  
+  
+    /**
+     * Command Buffer, and our current position within it.
+     */
+    char d_buf[LAZYSERIAL_BUF_SIZE];
+    int  d_pos;
+  }; // class
 } //namespace
 

@@ -23,6 +23,9 @@
 #define LAZY_STRINGIFY(X) #X
 #define LAZY_KEYVAL(X) " " #X "=" LAZY_STRINGIFY(X)
 
+#define LAZY_RETURN_IF(X) if (X) { return; }
+#define LAZY_RETURN_UNLESS(X) if (!(X)) { return; }
+
 #ifndef MIN
   #define MIN(a, b) (a) < (b) ? (a) : (b)
 #endif
