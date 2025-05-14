@@ -26,14 +26,44 @@
 #define LAZYSERIAL_VERSION 2.0
 
 
+#define LAZY_COMMAND(NAME)                                       \
+  if (context.mode == LazySerial::CallingMode::IDENTIFY) {       \
+    context.stream.print(NAME);                                  \
+    return;                                                      \
+  } else if (context.mode == LazySerial::CallingMode::INVOKE) {  \
+    if (strcasecmp(NAME, context.entered_command_name) != 0) {   \
+      return;  /* not us. */                                     \
+    }                                                            \
+    context.mode = LazySerial::CallingMode::MATCHED;             \
+  }
+
+
+
 namespace LazySerial
 {
+  /**
+   * When callbacks are called, they might be called for a variety of purposes, not just invocation.
+   */
+  namespace CallingMode {
+    enum CallingMode {
+      IDENTIFY,  // Print our name to serial
+      INVOKE,    // Run, if we match.
+      MATCHED,   // 'Return' value - we matched, no need to run help.
+    };
+  }
+
+  struct LazySerialContext {
+    CallingMode::CallingMode mode;
+    const char *entered_command_name;
+    Stream &stream;
+  };
+  
   /**
    * The function pointer signature used for callbacks.
    * It is necessary to pass the 'args' string as a non-const char *, since you will most likely want to
    * use strtok() on it to further parse things.
    */
-  typedef void (*CallbackFunction)(char *);
+  typedef void (*CallbackFunction)(LazySerialContext &, char *);
 
   /**
    * Function pointer signature for a generic character-reading source, for use with scripts saved to EEPROM.
@@ -42,8 +72,7 @@ namespace LazySerial
   
 
   template <size_t BUF_SIZE>
-  class LazySerial
-  {  
+  class LazySerial {  
   public:
     /**
      * Constructor. Pass in the Stream to read and write from/to.
@@ -65,12 +94,9 @@ namespace LazySerial
     void
     set_callbacks(
         CallbackFunction *callbacks,
-        size_t callbacks_size) {
+        uint8_t callbacks_size) {
       d_callbacks = callbacks;
       d_callbacks_size = callbacks_size;
-      d_stream.print("I have loaded ");
-      d_stream.print(callbacks_size);
-      d_stream.print(" callbacks.");
     }
     
     /**
@@ -94,10 +120,11 @@ namespace LazySerial
     void
     cmd_help() {
       d_stream.print(F("ERR Available commands:"));
-      for (int i = 0; i < d_callbacks_size; ++i) {
+      for (uint8_t i = 0; i < d_callbacks_size; ++i) {
         d_stream.print(' ');
-        // #### NAME YOURSELF
-        //d_stream.print(d_commands[i].name);
+        // Ask commands to name themselves.
+        LazySerialContext context{CallingMode::IDENTIFY, "HELP", d_stream};
+        d_callbacks[i](context, "");
       }
       d_stream.print(F(".\n"));
     }
@@ -211,16 +238,15 @@ namespace LazySerial
       LAZY_RETURN_IF (cmd_name[0] == '\0');
 
       // Scan through all registered callbacks.
-      for (int i = 0; i < d_callbacks_size; ++i) {
-        // #### TODO TEST YOURSELF
-        //if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
-        //  d_commands[i].callback(cmd_args);
-        //  return;
-        //}
+      for (uint8_t i = 0; i < d_callbacks_size; ++i) {
+        LazySerialContext context{CallingMode::INVOKE, cmd_name, d_stream};
+        d_callbacks[i](context, cmd_args);
+        LAZY_RETURN_IF (context.mode == CallingMode::MATCHED);
       }
       // Nothing matched. Print some help?
       if (d_help) {
-        d_help(cmd_args);
+        LazySerialContext context{CallingMode::INVOKE, "HELP", d_stream};
+        d_help(context, cmd_args);
       } else {
         cmd_help();
       }
@@ -278,7 +304,7 @@ namespace LazySerial
      * A statically declared list of callback functions.
      */
     CallbackFunction* d_callbacks;
-    size_t d_callbacks_size;
+    uint8_t d_callbacks_size;
   
     /**
      * Permit cmd_help to be overridden with something custom (and outside of this class).
