@@ -20,7 +20,7 @@
 #ifndef LAZYSERIAL_H
 #define LAZYSERIAL_H
 
-#define LAZYSERIAL_VERSION 1.3
+#define LAZYSERIAL_VERSION 2.0
 
 // Max size of any command string. Including the \0!
 // We currently kludge things a bit and allocate two buffers.
