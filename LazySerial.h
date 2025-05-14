@@ -25,13 +25,6 @@
 
 #define LAZYSERIAL_VERSION 2.0
 
-// Max number of commands we will ever have.
-#ifndef LAZYSERIAL_NUM_CMDS
-  #define LAZYSERIAL_NUM_CMDS 25
-#endif
-
-
-
 
 namespace LazySerial
 {
@@ -47,15 +40,6 @@ namespace LazySerial
    */
   typedef char (*ReaderFunction)(size_t);
   
-  /**
-   * The struct we store our callbacks in.
-   */
-  struct Callback
-  {
-    const char *name;
-    CallbackFunction callback;
-  };
-
 
   template <size_t BUF_SIZE>
   class LazySerial
@@ -69,9 +53,24 @@ namespace LazySerial
     LazySerial(
         Stream &stream) :
       d_stream(stream),
-      d_help(NULL) {
+      d_help(NULL),
+      d_callbacks(nullptr),
+      d_callbacks_size(0) {
       clear_buffer();
-      d_num_commands = 0;
+    }
+    
+    /**
+     * Call this during setup to set your array of LazySerial::Command s
+     */
+    void
+    set_callbacks(
+        CallbackFunction *callbacks,
+        size_t callbacks_size) {
+      d_callbacks = callbacks;
+      d_callbacks_size = callbacks_size;
+      d_stream.print("I have loaded ");
+      d_stream.print(callbacks_size);
+      d_stream.print(" callbacks.");
     }
     
     /**
@@ -86,20 +85,6 @@ namespace LazySerial
       run_command();
     }
 
-    /**
-     * Register a callback for use when a given command is seen.
-     */
-    void
-    register_callback(
-        const char* name,
-        CallbackFunction callback) {
-      if (d_num_commands >= LAZYSERIAL_NUM_CMDS) {
-        return;    // Nope!
-      }
-      d_commands[d_num_commands].name = name;
-      d_commands[d_num_commands].callback = callback;
-      d_num_commands++;
-    }
 
     /**
      * The default help function.
@@ -108,14 +93,11 @@ namespace LazySerial
      */
     void
     cmd_help() {
-      d_stream.print(F("ERR "));
-      d_stream.print(d_num_commands);
-      d_stream.print("/");
-      d_stream.print(LAZYSERIAL_NUM_CMDS);
-      d_stream.print(F(" Available commands:"));
-      for (int i = 0; i < d_num_commands; ++i) {
+      d_stream.print(F("ERR Available commands:"));
+      for (int i = 0; i < d_callbacks_size; ++i) {
         d_stream.print(' ');
-        d_stream.print(d_commands[i].name);
+        // #### NAME YOURSELF
+        //d_stream.print(d_commands[i].name);
       }
       d_stream.print(F(".\n"));
     }
@@ -229,11 +211,12 @@ namespace LazySerial
       LAZY_RETURN_IF (cmd_name[0] == '\0');
 
       // Scan through all registered callbacks.
-      for (int i = 0; i < d_num_commands; ++i) {
-        if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
-          d_commands[i].callback(cmd_args);
-          return;
-        }
+      for (int i = 0; i < d_callbacks_size; ++i) {
+        // #### TODO TEST YOURSELF
+        //if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
+        //  d_commands[i].callback(cmd_args);
+        //  return;
+        //}
       }
       // Nothing matched. Print some help?
       if (d_help) {
@@ -245,20 +228,6 @@ namespace LazySerial
 
   
   private:
-    
-    /**
-     * Where we store all the callbacks we have registered.
-     * Lack of dynamic storage is killing me.
-     */
-    Callback d_commands[LAZYSERIAL_NUM_CMDS];
-    int      d_num_commands;
-
-    /**
-     * Permit cmd_help to be overridden with something custom (and outside of this class).
-     */
-    CallbackFunction d_help;
-
-    
     void
     clear_buffer() {
       d_pos = 0;
@@ -303,13 +272,25 @@ namespace LazySerial
     /**
      * What stream we are reading from / writing to.
      */
-    Stream &d_stream;  
+    Stream &d_stream;
+    
+    /**
+     * A statically declared list of callback functions.
+     */
+    CallbackFunction* d_callbacks;
+    size_t d_callbacks_size;
   
+    /**
+     * Permit cmd_help to be overridden with something custom (and outside of this class).
+     */
+    CallbackFunction d_help;
+
     /**
      * Command Buffer, and our current position within it.
      */
     char d_buf[BUF_SIZE];
     int  d_pos;
+    
   }; // class
 } //namespace
 
