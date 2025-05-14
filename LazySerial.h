@@ -25,11 +25,6 @@
 
 #define LAZYSERIAL_VERSION 2.0
 
-// Max size of any command string. Including the \0!
-// We currently kludge things a bit and allocate two buffers.
-#ifndef LAZYSERIAL_BUF_SIZE
-  #define LAZYSERIAL_BUF_SIZE 256
-#endif
 // Max number of commands we will ever have.
 #ifndef LAZYSERIAL_NUM_CMDS
   #define LAZYSERIAL_NUM_CMDS 25
@@ -62,6 +57,7 @@ namespace LazySerial
   };
 
 
+  template <size_t BUF_SIZE>
   class LazySerial
   {  
   public:
@@ -175,7 +171,7 @@ namespace LazySerial
         // Copy the resulting line into the modifiable command buffer.
         size_t length = end - pos;
         if (length) {
-          length = MIN(length, LAZYSERIAL_BUF_SIZE-1);
+          length = MIN(length, BUF_SIZE-1);
           strncpy(d_buf, pos, length);
           d_buf[length] = '\0';
 
@@ -230,9 +226,8 @@ namespace LazySerial
         const char *cmd_name,
         char *cmd_args ) {
       // No-op command, helps in the case we are getting CRLF.
-      if (cmd_name[0] == '\0') {
-        return;
-      }
+      LAZY_RETURN_IF (cmd_name[0] == '\0');
+
       // Scan through all registered callbacks.
       for (int i = 0; i < d_num_commands; ++i) {
         if (strcasecmp(cmd_name, d_commands[i].name) == 0) {
@@ -248,25 +243,8 @@ namespace LazySerial
       }
     }
 
-    /**
-     * As dispatch_command() but in the event we only have a const char * for the arguments.
-     */
-    void
-    dispatch_command(
-        const char *cmd_name,
-        const char *cmd_args ) {
-      // Put args somewhere mutable.
-      strncpy(d_args_tmp, cmd_args, LAZYSERIAL_BUF_SIZE-1);
-      d_args_tmp[LAZYSERIAL_BUF_SIZE-1] = '\0';
-      dispatch_command(cmd_name, d_args_tmp);
-    }
   
   private:
-    /**
-     * Args Buffer, needed just in case client code is using dispatch() with a const char *...
-     * Could be done better but I guess I don't really want to clobber the serial buffer?
-     */
-    char d_args_tmp[LAZYSERIAL_BUF_SIZE];
     
     /**
      * Where we store all the callbacks we have registered.
@@ -312,7 +290,7 @@ namespace LazySerial
         // keeping a \0 terminator just in case.
         d_buf[d_pos] = ch;
         d_pos++;
-        if (d_pos >= LAZYSERIAL_BUF_SIZE) {
+        if (d_pos >= BUF_SIZE) {
           // But if we're going to overflow, forget the whole damn thing.
           clear_buffer();
           return false;
@@ -330,7 +308,7 @@ namespace LazySerial
     /**
      * Command Buffer, and our current position within it.
      */
-    char d_buf[LAZYSERIAL_BUF_SIZE];
+    char d_buf[BUF_SIZE];
     int  d_pos;
   }; // class
 } //namespace
