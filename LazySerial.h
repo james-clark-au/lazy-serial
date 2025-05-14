@@ -1,6 +1,6 @@
 /*
- * This file is part of the LazyCat LazySerial library.
- * Copyright (C) 2016 James Clark <james@lazycat.com.au>
+ * This file is part of the LazySerial library.
+ * Copyright (C) 2025 James Neko <arduino@neko.stream>
  * 
  * LazySerial is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -16,9 +16,12 @@
  * License along with LazySerial.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
+#pragma once
+#include <Arduino.h>
+#include <string.h>	// C-style string functions strchr, strtok, etc.
 
-#ifndef LAZYSERIAL_H
-#define LAZYSERIAL_H
+#include "LazySerial/helpers.h"
+
 
 #define LAZYSERIAL_VERSION 2.0
 
@@ -33,7 +36,6 @@
 #endif
 
 
-#include <Arduino.h>
 
 
 namespace LazySerial
@@ -191,4 +193,3 @@ namespace LazySerial
 
 } //namespace
 
-#endif

@@ -1,6 +1,6 @@
 /*
- * This file is part of the LazyCat LazySerial library.
- * Copyright (C) 2016 James Clark <james@lazycat.com.au>
+ * This file is part of the LazySerial library.
+ * Copyright (C) 2025 James Neko <arduino@neko.stream>
  * 
  * LazySerial is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
