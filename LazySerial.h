@@ -18,9 +18,9 @@
  */
 #pragma once
 #include <Arduino.h>
-#include <string.h>  // C-style string functions strchr, strtok, etc.
 
 #include "LazySerial/helpers.h"
+#include "LazySerial/Context.h"
 
 
 #define LAZYSERIAL_VERSION 2.0
@@ -42,28 +42,11 @@
 namespace LazySerial
 {
   /**
-   * When callbacks are called, they might be called for a variety of purposes, not just invocation.
-   */
-  namespace CallingMode {
-    enum CallingMode {
-      IDENTIFY,  // Print our name to serial
-      INVOKE,    // Run, if we match.
-      MATCHED,   // 'Return' value - we matched, no need to run help.
-    };
-  }
-
-  struct LazySerialContext {
-    CallingMode::CallingMode mode;
-    const char *entered_command_name;
-    Stream &stream;
-  };
-  
-  /**
    * The function pointer signature used for callbacks.
    * It is necessary to pass the 'args' string as a non-const char *, since you will most likely want to
    * use strtok() on it to further parse things.
    */
-  typedef void (*CallbackFunction)(LazySerialContext &, char *);
+  typedef void (*CallbackFunction)(Context &);
 
   /**
    * Function pointer signature for a generic character-reading source, for use with scripts saved to EEPROM.
@@ -111,31 +94,6 @@ namespace LazySerial
       run_command();
     }
 
-
-    /**
-     * The default help function.
-     * The magic HELP command is hard-coded to actually hit this method rather than anything in
-     * the function table, because we want access to our list of commands.
-     */
-    void
-    cmd_help() {
-      d_stream.print(F("ERR Available commands:"));
-      for (uint8_t i = 0; i < d_callbacks_size; ++i) {
-        d_stream.print(' ');
-        // Ask commands to name themselves.
-        LazySerialContext context{CallingMode::IDENTIFY, "HELP", d_stream};
-        d_callbacks[i](context, "");
-      }
-      d_stream.print(F(".\n"));
-    }
-    /**
-     * Set an alternative callback when no command matches.
-     */
-    void
-    set_help_callback(
-        CallbackFunction cmd_help) {
-      d_help = cmd_help;
-    }
     
     /**
      * Once the buffer is full, identify what command it is, parse and run it.
@@ -239,20 +197,45 @@ namespace LazySerial
 
       // Scan through all registered callbacks.
       for (uint8_t i = 0; i < d_callbacks_size; ++i) {
-        LazySerialContext context{CallingMode::INVOKE, cmd_name, d_stream};
-        d_callbacks[i](context, cmd_args);
+        Context context{CallingMode::INVOKE, d_stream, cmd_name, cmd_args};
+        d_callbacks[i](context);
         LAZY_RETURN_IF (context.mode == CallingMode::MATCHED);
       }
       // Nothing matched. Print some help?
       if (d_help) {
-        LazySerialContext context{CallingMode::INVOKE, "HELP", d_stream};
-        d_help(context, cmd_args);
+        Context context{CallingMode::INVOKE, d_stream, "HELP", cmd_args};
+        d_help(context);
       } else {
         cmd_help();
       }
     }
 
-  
+
+    /**
+     * The default help function.
+     * The magic HELP command is hard-coded to actually hit this method rather than anything in
+     * the function table, because we want access to our list of commands.
+     */
+    void
+    cmd_help() {
+      d_stream.print(F("ERR Available commands:"));
+      for (uint8_t i = 0; i < d_callbacks_size; ++i) {
+        d_stream.print(' ');
+        // Ask commands to name themselves.
+        Context context(CallingMode::IDENTIFY, d_stream);
+        d_callbacks[i](context);
+      }
+      d_stream.print(F(".\n"));
+    }
+    /**
+     * Set an alternative callback when no command matches.
+     */
+    void
+    set_help_callback(
+        CallbackFunction cmd_help) {
+      d_help = cmd_help;
+    }
+
   private:
     void
     clear_buffer() {
