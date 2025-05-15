@@ -69,7 +69,7 @@ namespace LazySerial
         pos++;
       }
     }
-    
+
     /**
      * Parse into some integer-like variable you supply by reference.
      * Returns if parsing went ok.
@@ -171,7 +171,38 @@ namespace LazySerial
       return true;
     }
 
+    /**
+     * Parse by setting the pointer-to-a-char* that you supply to the start of the next 'word'.
+     * Like strtok, this _**modifies**_ the args string by inserting a \0 to terminate the 'word'.
+     * Thus, it is delimited by space characters only.
+     * "" is not considered an 'ok' return value.
+     * Returns if parsing went ok.
+     */
+    bool
+    parse_word(char **charstar_ptr) {
+      // Consume leading whitespace.
+      parse_space();
+      LAZY_RETURN_FALSE_UNLESS(*pos);
+      char *start = pos;
+      
+      // Consume non-whitespace.
+      while (*pos && ! is_space(*pos)) {
+        pos++;
+      }
+      LAZY_RETURN_FALSE_UNLESS(pos > start);
+      
+      // Create a \0-delimited string we can 'return' by modifying the args string.
+      // However, if we have hit end of string, we cannot advance past that legit \0.
+      if (*pos != '\0') {
+        *pos = '\0';
+        pos++;
+      }
+      
+      *charstar_ptr = start;
+      return true;
+    }
 
+    
     CallingMode::CallingMode mode;
     Stream &stream;
     const char *entered_command_name;
