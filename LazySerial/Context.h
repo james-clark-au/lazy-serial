@@ -33,6 +33,7 @@ namespace LazySerial
       IDENTIFY,  // Print our name to serial
       INVOKE,    // Run, if we match.
       MATCHED,   // 'Return' value - we matched, no need to run help.
+      USAGE,     // Used as a 'Return' value if we error out and should print usage, but also as an initial value to the macro to actually do print the usage.
     };
   }
 

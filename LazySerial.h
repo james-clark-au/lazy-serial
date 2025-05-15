@@ -26,9 +26,12 @@
 #define LAZYSERIAL_VERSION 2.0
 
 
-#define LAZY_COMMAND(NAME)                                       \
+#define LAZY_COMMAND(NAME, USAGESTR...)                          \
   if (context.mode == LazySerial::CallingMode::IDENTIFY) {       \
     context.stream.print(NAME);                                  \
+    return;                                                      \
+  } else if (context.mode == LazySerial::CallingMode::USAGE) {   \
+    context.stream.println("ERR Usage: " NAME " " USAGESTR);     \
     return;                                                      \
   } else if (context.mode == LazySerial::CallingMode::INVOKE) {  \
     if (strcasecmp(NAME, context.entered_command_name) != 0) {   \
@@ -36,6 +39,9 @@
     }                                                            \
     context.mode = LazySerial::CallingMode::MATCHED;             \
   }
+
+#define LAZY_RETURN_USAGE_IF(X) if (X) { context.mode = LazySerial::CallingMode::USAGE; return; }
+#define LAZY_RETURN_USAGE_UNLESS(X) if (!(X)) { context.mode = LazySerial::CallingMode::USAGE; return; }
 
 
 
@@ -200,6 +206,12 @@ namespace LazySerial
         Context context{CallingMode::INVOKE, d_stream, cmd_name, cmd_args};
         d_callbacks[i](context);
         LAZY_RETURN_IF (context.mode == CallingMode::MATCHED);
+        if (context.mode == CallingMode::USAGE) {
+          // We matched the command but ran into problems parsing args.
+          // Call it again asking it to print its usage message.
+          d_callbacks[i](context);
+          return;
+        }
       }
       // Nothing matched. Print some help?
       if (d_help) {
