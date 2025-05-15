@@ -192,7 +192,53 @@ namespace LazySerial
       LAZY_RETURN_FALSE_UNLESS(pos > start);
       
       // Create a \0-delimited string we can 'return' by modifying the args string.
-      // However, if we have hit end of string, we cannot advance past that legit \0.
+      // However, if we have hit end of string, we cannot advance the parser past that legit \0.
+      if (*pos != '\0') {
+        *pos = '\0';
+        pos++;
+      }
+      
+      *charstar_ptr = start;
+      return true;
+    }
+
+
+    /**
+     * Parse by setting the pointer-to-a-char* that you supply to the start of the string,
+     * Like strtok, this _**modifies**_ the args string by inserting a \0 to terminate it.
+     * It is intended to match text between "", but you can specify that a 'bareword' is ok
+     * It does *NOT* handle any escape sequences, since we are modifying the args buffer in-place.
+     * It *WILL* skip over \" though.
+     * "" is considered an 'ok' return value.
+     * Returns if parsing went ok.
+     */
+    bool
+    parse_string(char **charstar_ptr, bool bareword_ok = false) {
+      // Consume leading whitespace.
+      parse_space();
+      LAZY_RETURN_FALSE_UNLESS(*pos);
+      
+      if (*pos != '"' && bareword_ok) {
+        // Fallback to bareword.
+        return parse_word(charstar_ptr);
+      }
+      // Move past initial ".
+      pos++;
+      char *start = pos;
+      
+      // Consume non-quote.
+      while (*pos && *pos != '"') {
+        if (*pos == '\\') {
+          pos++;
+          LAZY_RETURN_FALSE_UNLESS(*pos);  // backslash and then null is not ok, we were in a quoted string.
+        }
+        pos++;
+      }
+      LAZY_RETURN_FALSE_UNLESS(*pos);  // found a null is not ok, we were in a quoted string.
+      LAZY_RETURN_FALSE_UNLESS(*pos == '"');  // we were in a quoted string.
+      
+      // Create a \0-delimited string we can 'return' by modifying the args string.
+      // However, if we have hit end of string, we cannot advance the parser past that legit \0.
       if (*pos != '\0') {
         *pos = '\0';
         pos++;
