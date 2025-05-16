@@ -64,7 +64,7 @@ LazySerial::CallbackFunction commands[] = {
 
 void setup() {
   Serial.begin(9600);  // Don't forget to actually initialise Serial yourself!
-  lazy.set_commands(commands, std::size(commands));
+  lazy.set_commands(commands);
 }
 
 void loop() {
@@ -84,9 +84,9 @@ The instance takes a template argument - this specifies how big the internal cha
 LazySerial::LazySerial<128> lazy(Serial);
 ```
 
-### void set_commands(CallbackFunction *commands, uint8_t commands_size)
+### void set_commands(CallbackFunction *commands)
 
-To be called in `setup()`, this will associate your statically-declared array of command callbacks with the LazySerial instance. You can take advantage of `std::size` so you don't have to do any array-length book-keeping.
+To be called in `setup()`, this will associate your statically-declared array of command callbacks with the LazySerial instance. Magic voodoo template shenanigans make the function deduce the array size automagically, presuming you are passing in an actual array.
 
 ```cpp
 LazySerial::CallbackFunction commands[] = {
@@ -95,7 +95,7 @@ LazySerial::CallbackFunction commands[] = {
   cmd_say,
 };
 ... later ...
-lazy.set_commands(commands, std::size(commands));
+lazy.set_commands(commands);
 ```
 
 ### void loop()
@@ -195,4 +195,12 @@ void cmd_gpio(LazySerial::Context &context) {
 These two helper macros set `context.mode = LazySerial::CallingMode::USAGE` and immediately return.
 
 The way LazySerial dispatches commands, this will trigger it to re-run your callback with that mode still set, which the `LAZY_COMMAND()` macro will then understand as a request to print the usage string.
+
+### LAZY_KEYVAL(defined_var_name)
+
+Stringifies a " varname=varvalue", which I typically use in a "PINOUT" command to remind me what's hooked up to what.
+
+```cpp
+  context.stream.println(F("OK PINOUT" LAZY_KEYVAL(PIN_LED) LAZY_KEYVAL(PIN_CLK) LAZY_KEYVAL(PIN_DIO) LAZY_KEYVAL(PIN_SENSOR) ));
+```
 

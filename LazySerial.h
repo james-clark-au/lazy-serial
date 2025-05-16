@@ -67,13 +67,16 @@ namespace LazySerial
     
     /**
      * Call this during setup() to set your array of LazySerial::CallbackFunction s
+     * Weird template magic allows us to deduce the size of array passed.
+     * Ref: https://cplusplus.com/articles/D4SGz8AR/
+     * "The way to prevent this conversion (known as 'decay') is to declare the function parameter as a reference to an array by changing fun(string s[N]) to fun(string (&s)[N])"
      */
+    template <size_t S>
     void
     set_commands(
-        CallbackFunction *commands,
-        uint8_t commands_size) {
+        CallbackFunction (&commands)[S]) {
       d_commands = commands;
-      d_commands_size = commands_size;
+      d_commands_size = S;
     }
     
     /**
