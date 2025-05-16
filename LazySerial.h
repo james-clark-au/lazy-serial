@@ -90,31 +90,6 @@ namespace LazySerial
 
     
     /**
-     * Once the buffer is full, identify what command it is, parse and run it.
-     */
-    void
-    run_command() {
-      // Identify the command word. strchr is in <string.h>
-      char *end_of_cmd = strchr(d_buf, ' ');
-      char *cmd_name = d_buf;
-      char *cmd_args = d_buf;
-      if (end_of_cmd) {
-        // Set the delimiting space to a \0, advance args ptr to one past it.
-        end_of_cmd[0] = '\0';  // cmd_name will now be valid
-        end_of_cmd++;
-        cmd_args = end_of_cmd;
-      } else {
-        // No args. Put the 'args' pointer at the trailing \0 of the command itself, making args the empty string.
-        cmd_args = d_buf + strlen(d_buf);
-      }
-      
-      // Dispatch command!
-      dispatch_command(cmd_name, cmd_args);
-      // Clean up our buffer afterwards.
-      clear_buffer();
-    }
-    
-    /**
      * Instead of LazySerial polling the supplied Stream for commands, you can also supply a large string of
      * \n-terminated commands to run in a batch.
      */
@@ -276,6 +251,31 @@ namespace LazySerial
         d_buf[d_pos] = '\0';  // Just me being paranoid.
       }
       return false;
+    }
+    
+    /**
+     * Once the buffer is full, identify what command it is, parse and run it.
+     */
+    void
+    run_command() {
+      // Identify the command word. strchr is in <string.h>
+      char *end_of_cmd = strchr(d_buf, ' ');
+      char *cmd_name = d_buf;
+      char *cmd_args = d_buf;
+      if (end_of_cmd) {
+        // Set the delimiting space to a \0, advance args ptr to one past it.
+        end_of_cmd[0] = '\0';  // cmd_name will now be valid
+        end_of_cmd++;
+        cmd_args = end_of_cmd;
+      } else {
+        // No args. Put the 'args' pointer at the trailing \0 of the command itself, making args the empty string.
+        cmd_args = d_buf + strlen(d_buf);
+      }
+      
+      // Dispatch command!
+      dispatch_command(cmd_name, cmd_args);
+      // Clean up our buffer afterwards.
+      clear_buffer();
     }
     
     /**
