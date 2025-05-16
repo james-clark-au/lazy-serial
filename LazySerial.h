@@ -49,7 +49,7 @@ namespace LazySerial
   
 
   template <size_t BUF_SIZE>
-  class LazySerial {  
+  class LazySerial {
   public:
     /**
      * Constructor. Pass in the Stream to read and write from/to.
