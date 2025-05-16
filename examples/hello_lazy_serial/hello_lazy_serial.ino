@@ -1,71 +1,72 @@
 #include <LazySerial.h>
+#include "BlinkyLed.h"
 
-// Either use the Serial Monitor (Tools->Serial Monitor), or you could try minicom.
-// For Debian, you need to be in the 'dialout' group. e.g.:-
-//     sudo useradd james dialout
-// Then (after logging in again or starting a new login shell), you can
-//     minicom --device /dev/ttyUSB0
-// Use "Options->Screen->Add Carriage Return: Yes" as Minicom seems to render LF as plain LF.
-// Also note there's no local echo enabled by default so you're typing blind. LazySerial is intended
-// for a command-link between computer program and arduino, so a remote echo would be a bit pointless.
-
-// check we're actually doing something, repeatedly blink led 13
-int led_state = LOW;
-int led_countdown_ms = 1000;
-unsigned long last_time_ms = 0;
+#define BAUD_RATE 9600
 
 // Declare our global LazySerial object; tell it to use the Serial global object to communicate on.
-LazySerial::LazySerial lazy(Serial);
+LazySerial::LazySerial<128> lazy(Serial);
+
+// And something to blink an LED on and off.
+BlinkyLed::BlinkyLed blinky(LED_BUILTIN, 500);
 
 
-// ######### CALLBACKS ########
-// Define our callback functions first, or prototype them, so that register_callback("BLA", &func) doesn't error.
+// ---------------- SERIAL COMMAND CALLBACKS ----------------
 
-void say_hello(const char *blah)
-{
-  Serial.print("\n");
-  Serial.println("Hello!");
-  Serial.println("How are you?");
+void cmd_ohai(LazySerial::Context &context) {
+  LAZY_COMMAND("OHAI");
+  context.stream.println(F("OHAI hello_lazy_serial " __TIMESTAMP__  ));
 }
 
-void say_good(const char *blah)
-{
-  Serial.print("\n");
-  Serial.println("That's good!");  
+void cmd_pinout(LazySerial::Context &context) {
+  LAZY_COMMAND("PINOUT");
+  context.stream.println(F("OK PINOUT" LAZY_KEYVAL(LED_BUILTIN) ));
 }
 
-
-// ######## MAIN ARDUINO FUNCTIONS ########
-
-void setup()
-{
-  last_time_ms = millis();
-
-  // register some commands for the serial interface.
-  lazy.register_callback("HELLO", &say_hello);
-  lazy.register_callback("GOOD",  &say_good);
-
-  // We still need to do our own Serial init.
-  Serial.begin(115200);
-}
-
-void loop()
-{
-  unsigned long current_time_ms = millis();
-  
-  // so we know it's doing something, keep a 'heartbeat' pulsing.
-  led_countdown_ms -= current_time_ms - last_time_ms;
-  if (led_countdown_ms < 0) {
-    if (led_state == HIGH) {
-      led_state = LOW;
-      led_countdown_ms = 500;
-    } else {
-      led_state = HIGH;
-      led_countdown_ms = 1000;
-    }
-    digitalWrite(13, led_state);   // set the internal LED
+void cmd_blink(LazySerial::Context &context) {
+  LAZY_COMMAND("BLINK", "<pinNum> <interval>");
+  uint8_t pinNum = 0;
+  bool ok = context.parse_int_minmax<uint8_t>(&pinNum, 0, 255);
+  if ( ! ok) {
+    context.stream.print("OK Blink pin is ");
+    context.stream.print(blinky.pin());
+    context.stream.print("\n");
+    return;
   }
-  last_time_ms = current_time_ms;
+
+  blinky.changePin(pinNum);
+  uint32_t interval_ms = 0;
+  ok = context.parse_int(&interval_ms);
+  if (ok) {
+    blinky.changeInterval(interval_ms);
+  }
+
+  context.stream.print("OK BLINK pin ");
+  context.stream.print(blinky.pin());
+  context.stream.print(" ");
+  context.stream.print(blinky.d_interval);
+  context.stream.print("ms\n");
+}
+
+
+LazySerial::CallbackFunction commands[] = {
+  cmd_ohai,
+  cmd_pinout,
+  cmd_blink,
+};
+
+
+// ---------------- MAIN ARDUINO FUNCTIONS ----------------
+
+void setup() {
+  // We still need to do our own Serial init.
+  Serial.begin(BAUD_RATE);
+  lazy.set_commands(commands);
+}
+
+
+void loop() {
+  // Blink a LED!
+  blinky.loop();
 
   // Process commands via LazySerial!
   lazy.loop();
