@@ -60,20 +60,20 @@ namespace LazySerial
         Stream &stream) :
       d_stream(stream),
       d_help(NULL),
-      d_callbacks(nullptr),
-      d_callbacks_size(0) {
+      d_commands(nullptr),
+      d_commands_size(0) {
       clear_buffer();
     }
     
     /**
-     * Call this during setup to set your array of LazySerial::Command s
+     * Call this during setup() to set your array of LazySerial::CallbackFunction s
      */
     void
-    set_callbacks(
-        CallbackFunction *callbacks,
-        uint8_t callbacks_size) {
-      d_callbacks = callbacks;
-      d_callbacks_size = callbacks_size;
+    set_commands(
+        CallbackFunction *commands,
+        uint8_t commands_size) {
+      d_commands = commands;
+      d_commands_size = commands_size;
     }
     
     /**
@@ -190,14 +190,14 @@ namespace LazySerial
       LAZY_RETURN_IF (cmd_name[0] == '\0');
 
       // Scan through all registered callbacks.
-      for (uint8_t i = 0; i < d_callbacks_size; ++i) {
+      for (uint8_t i = 0; i < d_commands_size; ++i) {
         Context context{CallingMode::INVOKE, d_stream, cmd_name, cmd_args};
-        d_callbacks[i](context);
+        d_commands[i](context);
         LAZY_RETURN_IF (context.mode == CallingMode::MATCHED);
         if (context.mode == CallingMode::USAGE) {
           // We matched the command but ran into problems parsing args.
           // Call it again asking it to print its usage message.
-          d_callbacks[i](context);
+          d_commands[i](context);
           return;
         }
       }
@@ -219,11 +219,11 @@ namespace LazySerial
     void
     cmd_help() {
       d_stream.print(F("ERR Available commands:"));
-      for (uint8_t i = 0; i < d_callbacks_size; ++i) {
+      for (uint8_t i = 0; i < d_commands_size; ++i) {
         d_stream.print(' ');
         // Ask commands to name themselves.
         Context context(CallingMode::IDENTIFY, d_stream);
-        d_callbacks[i](context);
+        d_commands[i](context);
       }
       d_stream.print(F(".\n"));
     }
@@ -286,8 +286,8 @@ namespace LazySerial
     /**
      * A statically declared list of callback functions.
      */
-    CallbackFunction* d_callbacks;
-    uint8_t d_callbacks_size;
+    CallbackFunction* d_commands;
+    uint8_t d_commands_size;
   
     /**
      * Permit cmd_help to be overridden with something custom (and outside of this class).
