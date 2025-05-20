@@ -204,3 +204,6 @@ Stringifies a " varname=varvalue", which I typically use in a "PINOUT" command t
   context.stream.println(F("OK PINOUT" LAZY_KEYVAL(PIN_LED) LAZY_KEYVAL(PIN_CLK) LAZY_KEYVAL(PIN_DIO) LAZY_KEYVAL(PIN_SENSOR) ));
 ```
 
+## LICENCE
+
+MIT.
