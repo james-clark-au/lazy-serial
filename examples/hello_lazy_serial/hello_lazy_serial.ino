@@ -1,3 +1,12 @@
+/*
+ * hello_lazy_serial - example basic serial commands sketch.
+ *
+ * This file is part of the LazySerial library example code. It is licenced under the MIT Open Source licence.
+ * See the file LICENCE for details.
+ * Copyright (C) 2025 James Neko <arduino@neko.stream>
+ * 
+ * SPDX-License-Identifier: MIT
+ */ 
 #include <LazySerial.h>
 #include "BlinkyLed.h"
 
@@ -19,7 +28,7 @@ void cmd_ohai(LazySerial::Context &context) {
 
 void cmd_pinout(LazySerial::Context &context) {
   LAZY_COMMAND("PINOUT");
-  context.stream.println(F("OK PINOUT" LAZY_KEYVAL(LED_BUILTIN) ));
+  context.stream.println(F("OK PINOUT" LAZY_KEYVAL(ARDUINO_BOARD) LAZY_KEYVAL(LED_BUILTIN) ));
 }
 
 void cmd_blink(LazySerial::Context &context) {

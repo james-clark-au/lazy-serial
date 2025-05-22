@@ -1,3 +1,10 @@
+/*
+ * This file is part of the LazySerial library example code. It is licenced under the MIT Open Source licence.
+ * See the file LICENCE for details.
+ * Copyright (C) 2025 James Neko <arduino@neko.stream>
+ * 
+ * SPDX-License-Identifier: MIT
+ */
 #pragma once
 
 namespace BlinkyLed
